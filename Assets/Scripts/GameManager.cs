@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
 
@@ -11,6 +10,9 @@ public class GameManager : MonoBehaviour
     public TextMeshProUGUI scoreText;
     public GameObject gameOverPanel;
     public TextMeshProUGUI restartHintText;
+
+    [Header("Audio")]
+    public AudioClip gameOverSound;
 
     private int score = 0;
     private bool isGameOver = false;
@@ -28,14 +30,14 @@ public class GameManager : MonoBehaviour
     {
         if (gameOverPanel != null)
             gameOverPanel.SetActive(false);
-            
+
         UpdateScoreText();
     }
 
     void Update()
     {
         // Restart Level Input (R)
-        if (Input.GetKeyDown(KeyCode.R))
+        if (Input.GetKeyDown(KeyCode.R) && isGameOver)
         {
             RestartLevel();
         }
@@ -59,7 +61,15 @@ public class GameManager : MonoBehaviour
 
     public void GameOver()
     {
+        if (isGameOver) return;
+
         isGameOver = true;
+
+        // Play Game Over sound
+        if (gameOverSound != null)
+        {
+            AudioSource.PlayClipAtPoint(gameOverSound, Camera.main.transform.position);
+        }
 
         if (gameOverPanel != null)
             gameOverPanel.SetActive(true);
@@ -68,7 +78,8 @@ public class GameManager : MonoBehaviour
             restartHintText.gameObject.SetActive(true);
 
         // Stop the player
-        PlayerController player = FindObjectOfType<PlayerController>();
+        PlayerController player = FindFirstObjectByType<PlayerController>();
+
         if (player != null)
         {
             player.enabled = false;
@@ -85,7 +96,6 @@ public class GameManager : MonoBehaviour
     {
         int nextSceneIndex = SceneManager.GetActiveScene().buildIndex + 1;
 
-        // Check if there are more levels, otherwise load main menu (scene 0)
         if (nextSceneIndex < SceneManager.sceneCountInBuildSettings)
         {
             SceneManager.LoadScene(nextSceneIndex);
@@ -93,7 +103,7 @@ public class GameManager : MonoBehaviour
         else
         {
             Debug.Log("Game Finished! Returning to Main Menu.");
-            SceneManager.LoadScene(0); // Assuming 0 is MainMenu
+            SceneManager.LoadScene(0);
         }
     }
 }
