@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
+using System.Collections;
 
 public class GameManager : MonoBehaviour
 {
@@ -16,10 +17,12 @@ public class GameManager : MonoBehaviour
 
     private int score = 0;
     private bool isGameOver = false;
+    private Vector3 checkpointPosition;
+    private PlayerController currentPlayer;
+    private bool hasCheckpoint = false;
 
     void Awake()
     {
-        // Singleton pattern
         if (Instance == null)
             Instance = this;
         else
@@ -31,12 +34,22 @@ public class GameManager : MonoBehaviour
         if (gameOverPanel != null)
             gameOverPanel.SetActive(false);
 
+        currentPlayer = FindFirstObjectByType<PlayerController>();
+
+        if (currentPlayer != null)
+            checkpointPosition = currentPlayer.transform.position;
+
         UpdateScoreText();
+    }
+
+    public void SetCheckpoint(Vector3 newCheckpoint)
+    {
+        checkpointPosition = newCheckpoint;
+        hasCheckpoint = true;
     }
 
     void Update()
     {
-        // Restart Level Input (R)
         if (Input.GetKeyDown(KeyCode.R) && isGameOver)
         {
             RestartLevel();
@@ -65,7 +78,7 @@ public class GameManager : MonoBehaviour
 
         isGameOver = true;
 
-        // Play Game Over sound
+        // Play sound
         if (gameOverSound != null)
         {
             AudioSource.PlayClipAtPoint(gameOverSound, Camera.main.transform.position);
@@ -75,17 +88,55 @@ public class GameManager : MonoBehaviour
             gameOverPanel.SetActive(true);
 
         if (restartHintText != null)
-            restartHintText.gameObject.SetActive(true);
+            restartHintText.gameObject.SetActive(!hasCheckpoint);
 
-        // Stop the player
-        PlayerController player = FindFirstObjectByType<PlayerController>();
-
-        if (player != null)
+        if (currentPlayer != null)
         {
-            player.enabled = false;
-            player.GetComponent<Rigidbody2D>().linearVelocity = Vector2.zero;
+            currentPlayer.enabled = false;
+            currentPlayer.GetComponent<Rigidbody2D>().linearVelocity = Vector2.zero;
+            
+            SpriteRenderer sr = currentPlayer.GetComponent<SpriteRenderer>();
+            if (sr != null)
+                sr.enabled = false;
+        }
+
+        if (hasCheckpoint)
+        {
+            StartCoroutine(RespawnPlayer());
         }
     }
+
+    IEnumerator RespawnPlayer(){
+    yield return new WaitForSeconds(1.5f);
+
+    if (currentPlayer != null)
+    {
+        Rigidbody2D rb = currentPlayer.GetComponent<Rigidbody2D>();
+        SpriteRenderer sr = currentPlayer.GetComponent<SpriteRenderer>();
+
+        // Move player slightly above checkpoint
+        currentPlayer.transform.position = checkpointPosition + Vector3.up * 1.5f;
+
+        // Reset physics
+        rb.linearVelocity = Vector2.zero;
+        rb.angularVelocity = 0f;
+
+        // Re-enable player
+        currentPlayer.enabled = true;
+        Debug.Log("Player respawned at " + checkpointPosition);
+        // Make sure the sprite is visible
+        if (sr != null)
+            sr.enabled = true;
+
+        // Reset scale just in case
+        currentPlayer.transform.localScale = Vector3.one;
+    }
+
+    if (gameOverPanel != null)
+        gameOverPanel.SetActive(false);
+
+    isGameOver = false;
+ }
 
     public void RestartLevel()
     {

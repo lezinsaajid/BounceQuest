@@ -1,15 +1,14 @@
 using UnityEngine;
 
-public class KillZone : MonoBehaviour
+public class EnemyDamage : MonoBehaviour
 {
-    private void OnTriggerEnter2D(Collider2D other)
+    private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (other.CompareTag("Player"))
+        if (collision.gameObject.CompareTag("Player"))
         {
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.GameOver();
-                Debug.Log("Player hit spike");
             }
         }
     }

@@ -24,9 +24,5 @@ public class Hazard : MonoBehaviour
         {
             GameManager.Instance.GameOver();
         }
-
-        // Hide player visually but keep object alive if needed, or destroy it
-        // For simple setup, destroying it
-        Destroy(playerObject);
     }
 }
